@@ -1,0 +1,29 @@
+#############################################################################
+# Network resources
+#############################################################################
+
+# Create the network VNET
+# https://www.terraform.io/docs/providers/azurerm/d/virtual_network.html
+resource "azurerm_virtual_network" "network_vnet" {
+  depends_on          = [azurerm_resource_group.primary_rg]
+  name                = var.vnet_name
+  address_space       = [var.vnet_address_space]
+  resource_group_name = var.resource_group_name
+  location            = var.location
+
+  tags = var.tags
+}
+
+# Create the subnets for network
+# https://www.terraform.io/docs/providers/azurerm/d/subnet.html
+resource "azurerm_subnet" "network_subnet" {
+  depends_on = [azurerm_resource_group.primary_rg]
+
+  count                = var.subnet_count
+  name                 = var.subnet_names[count.index]
+  address_prefix       = var.subnet_prefixes[count.index]
+  virtual_network_name = azurerm_virtual_network.network_vnet.name
+  resource_group_name  = var.resource_group_name
+
+}
+

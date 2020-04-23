@@ -1,0 +1,89 @@
+#############################################################################
+# Key vault resource
+#############################################################################
+
+# The random_integer is a dicrete provider type. We will need to init again
+resource "random_integer" "random_kv_num" {
+  min = 1000
+  max = 9999
+}
+
+# Generate a random password for admin credentials. We will put it in Key Vault
+resource "random_password" "web_vm_random_password" {
+  length           = 16
+  min_upper        = 2
+  min_lower        = 2
+  min_special      = 2
+  number           = true
+  special          = true
+  override_special = "!@#$%&"
+}
+
+/*
+
+This data source will provide information about AzureRM Provider
+Helpful if you are running under a managed identity or service principal 
+Getting the object id for use when setting the KV Access Policy works locally
+but fails under Azure Cloud Shell. See this issue:
+https://github.com/terraform-providers/terraform-provider-azurerm/issues/2901
+https://www.terraform.io/docs/providers/azurerm/d/client_config.html
+
+*/
+
+data "azurerm_client_config" "current" {
+
+}
+
+# Create an Azure Key Vault resource
+# Setting the object id by way to the Azure AD UPN is a workaround
+# https://www.terraform.io/docs/providers/azurerm/r/key_vault.html
+resource "azurerm_key_vault" "kv_ll" {
+
+  depends_on = [azurerm_resource_group.primary_rg]
+
+  name                        = "${var.key_vault_name}${random_integer.random_kv_num.result}"
+  location                    = var.location
+  resource_group_name         = var.resource_group_name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+
+  sku_name = "standard"
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azuread_user.current_azuread_user_upn.id
+
+    secret_permissions = [
+      "set", "get", "delete", "list"
+    ]
+  }
+
+  #network_acls {
+  #    default_action          = "Deny"
+  #    bypass                  = "AzureServices"
+  #}
+
+  tags = var.tags
+}
+
+/*
+Sensitive data gets stored in the Terraform state file. There are specific strategies
+around protecting the data in the state file in remote state to reduce this address this issue.
+
+https://www.terraform.io/docs/state/sensitive-data.html
+
+*/
+
+# Create a secret to use as a password when create a virtual machine
+resource "azurerm_key_vault_secret" "ll_admin_password_secret" {
+  name         = var.key_vault_admin_secret_password_name
+  value        = random_password.web_vm_random_password.result
+  key_vault_id = azurerm_key_vault.kv_ll.id
+  tags         = var.tags
+}
+
+output "web_linux_vm_admin_password" {
+  description = "Administrator password for the Virtual Machine"
+  value       = random_password.web_vm_random_password.result
+  #sensitive   = true
+}

@@ -1,0 +1,134 @@
+#############################################################################
+# Compute/Virtual Machine Resources
+#############################################################################
+
+# Create a random number for dsn
+resource "random_integer" "random_dns_num" {
+  min = 1000
+  max = 9999
+}
+
+
+# Get the admin user password from the key vault
+data "azurerm_key_vault_secret" "ll_admin_password_secret" {
+  depends_on   = [azurerm_key_vault_secret.ll_admin_password_secret]
+  name         = var.key_vault_admin_secret_password_name
+  key_vault_id = azurerm_key_vault.kv_ll.id
+}
+
+# Create A Public IP Address
+resource "azurerm_public_ip" "web_linux_vm_ip" {
+  depends_on          = [azurerm_resource_group.primary_rg]
+  count               = var.web_linux_vm_count
+  zones               = [1]
+  name                = "${var.virtual_machine_name}-${count.index}${var.public_ip_suffix}"
+  domain_name_label   = "ccll${random_integer.random_dns_num.result}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  allocation_method   = var.public_ip_allocation_method
+  tags                = var.tags
+}
+
+# Create Network Interface Card for web VM
+resource "azurerm_network_interface" "web_linux_vm_nic" {
+  count               = var.web_linux_vm_count
+  depends_on          = [azurerm_public_ip.web_linux_vm_ip]
+  name                = "${var.virtual_machine_name}-${count.index}${var.network_interface_card_suffix}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  ip_configuration {
+    name                          = "${var.virtual_machine_name}${var.network_interface_ip_config_suffix}"
+    subnet_id                     = azurerm_subnet.network_subnet[1].id
+    private_ip_address_allocation = var.private_ip_allocation_method
+    private_ip_address            = var.virtual_machine_private_ip_addresses[count.index]
+    public_ip_address_id          = azurerm_public_ip.web_linux_vm_ip[count.index].id
+  }
+  tags = var.tags
+}
+
+
+/*
+Create Linux VM with web server
+
+Sensitive data gets stored in the Terraform state file. There are specific strategies
+around protecting the data in the state file in remote state this issue.
+
+https://www.terraform.io/docs/state/sensitive-data.html
+
+*/
+
+resource "azurerm_virtual_machine" "web_linux_vm" {
+  depends_on                       = [azurerm_network_interface.web_linux_vm_nic]
+  count                            = var.web_linux_vm_count
+  zones                            = [var.web_linux_vm_az_zone]
+  location                         = var.location
+  resource_group_name              = var.resource_group_name
+  name                             = "${var.virtual_machine_name}-${count.index}"
+  network_interface_ids            = [azurerm_network_interface.web_linux_vm_nic[count.index].id]
+  vm_size                          = var.web_linux_vm_size
+  delete_os_disk_on_termination    = var.web_linux_delete_os_disk_on_termination
+  delete_data_disks_on_termination = var.web_linux_delete_data_disks_on_termination
+
+  storage_image_reference {
+    publisher = lookup(var.web_linux_vm_image, "publisher", null)   #"Canonical"
+    offer     = lookup(var.web_linux_vm_image, "offer", null)       #"UbuntuServer"
+    sku       = lookup(var.web_linux_vm_image, "sku", null)         #"18.04-LTS"
+    version   = lookup(var.web_linux_vm_image, "version", null)     #"latest"
+  }
+
+  storage_os_disk {
+    name              = "${var.virtual_machine_name}-${count.index}${var.web_linux_delete_os_disk_suffix}"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
+  os_profile {
+    computer_name  = "${var.virtual_machine_name}-${count.index}"
+    admin_username = var.web_linux_admin_username
+    admin_password = data.azurerm_key_vault_secret.ll_admin_password_secret.value
+    custom_data    = file("azure-user-data.sh")
+  }
+
+  os_profile_linux_config {
+    disable_password_authentication = false
+  }
+
+  tags = var.tags
+
+}
+
+#############################################################################
+# Compute/Virtual Machine Resource Output
+#############################################################################
+
+#output "web_linux_vm_name" {
+#  description = "Virtual Machine name"
+#  value       = azurerm_virtual_machine.web_linux_vm.name
+#}
+
+output "web_linux_vm_ip_address" {
+  description = "{Public IP Address"
+  value       = [azurerm_public_ip.web_linux_vm_ip.*.ip_address]
+  
+  #value       = {
+  #  for ip in azurerm_public_ip.web_linux_vm_ip:
+  #  ip.ip_address => ip.ip_address
+
+  #}
+  
+  #azurerm_public_ip.web_linux_vm_ip[0].ip_address
+}
+
+output "web_linux_dns_name" {
+  description = "Public IP DNS Label"
+  value       = [azurerm_public_ip.web_linux_vm_ip.*.domain_name_label]
+}
+
+#output "web_linux_vm_admin_username" {
+#  description = "Username for the Virtual Machine"
+#  value       = var.web_linux_admin_username
+#  #sensitive   = true
+#}
+

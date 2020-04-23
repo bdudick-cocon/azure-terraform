@@ -29,7 +29,7 @@ az account show
 ## Clone The Repo and Look at the files
 
 ```
-git clone https://bdudick@dev.azure.com/bdudick/azure-terraform-ll/_git/azure-terraform-ll
+git clone https://github.com/bdudick-cocon/azure-terraform.git
 
 ls -la
 

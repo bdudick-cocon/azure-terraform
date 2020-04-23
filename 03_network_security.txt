@@ -1,0 +1,71 @@
+#############################################################################
+# Network Security Resources
+#############################################################################
+
+
+# Create the network security group
+resource "azurerm_network_security_group" "nsg_subnet_00" {
+
+  depends_on = [azurerm_resource_group.primary_rg]
+
+  name                = var.network_security_group_name_00
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  tags = var.tags
+}
+
+# Create the network security group rule and associate it with the nsg
+resource "azurerm_network_security_rule" "nsg_rule_allow_ssh" {
+  name                        = "AllowSSHInbound"
+  priority                    = 150
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "22"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_00.name
+
+  depends_on = [azurerm_subnet.network_subnet]
+
+}
+
+# Create the network security group rule and associate with nsg
+resource "azurerm_network_security_rule" "nsg_rule_allow_http" {
+  name                        = "AllowHTTPInbound"
+  priority                    = 160
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "80"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_00.name
+
+  depends_on = [azurerm_subnet.network_subnet]
+
+}
+
+# Create the network security group rule and associate with nsg
+resource "azurerm_network_security_rule" "nsg_rule_allow_https" {
+  name                        = "AllowHTTPSInbound"
+  priority                    = 170
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "443"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.nsg_subnet_00.name
+
+  depends_on = [azurerm_subnet.network_subnet]
+
+}
+
