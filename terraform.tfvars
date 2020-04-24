@@ -1,14 +1,4 @@
-## https://adrianhall.github.io/typescript/2019/10/23/terraform-functions/
 
-## https://www.terraform.io/docs/configuration/expressions.html
-
-## https://www.terraform.io/docs/providers/azurerm/r/virtual_machine.html
-
-## https://www.terraform.io/docs/providers/azurerm/r/public_ip.html
-
-## https://learn.hashicorp.com/terraform/azurerm/authentication-service-principal-client-secret
-
-## TODO: vms to zones, create lb
 /*
 Some preliminary work to do in Azure CLoud Shell to get Terraform
 to talk to Azure Resource Manager and provision resource under our subscription.
