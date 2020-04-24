@@ -26,7 +26,7 @@ az account set -s <subscription_id>
 az account show
 ```
 
-## Clone The Repo and Look at the files
+## Clone The Repo And Review The Files
 
 ```
 git clone https://github.com/bdudick-cocon/azure-terraform.git
@@ -38,16 +38,20 @@ cd azure-terraform
 ls -la
 
 ```
-## Add Your Account Specific Info To the terraform.tfvars file and init terraform
+## Add Your Account Specific Info To The terraform.tfvars File And Perform Init
 
 ```
 code terraform.tfvars
+
+tenant_id                   = "<your_tenant_id>"
+subscription_id             = "<your_subscription_id>"
+current_azuread_user_upn    = "<your_azuread_user_upn>"
 
 terraform init
 
 ```
 
-## Create The Resource Group
+## Create The Azure Resource Group
 
 ```
 code main.tf
@@ -57,13 +61,13 @@ terraform plan
 terraform apply
 ```
 
-## Destroy The Resource Group
+## Destroy The Azure Resource Group
 
 ```
 terraform destroy
 ```
 
-## Create The Resource Group And Key Vault
+## Recreate The Azure Resource Group And Create The Azure Key Vault
 
 ```
 mv 01_key_vault.txt 01_key_vault.tf
@@ -75,7 +79,7 @@ terraform plan
 terraform apply
 ```
 
-## Create The Network
+## Create The Virtual Network (VNET) And Subnets
 
 ```
 mv 02_network_main.txt 02_network_main.tf
