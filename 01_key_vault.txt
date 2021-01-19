@@ -3,12 +3,6 @@
 ## More text
 ## Add some more text updates
 ## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
 
 #############################################################################
 # Key vault resource
