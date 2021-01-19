@@ -1,14 +1,5 @@
 ## More text 0705
 ## Add some more text
-## More text
-## Add some more text updates
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
-## Add some more stuff
 
 #############################################################################
 # Key vault resource
